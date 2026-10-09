@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis{% endblock %}
+{% block eyebrow %}Interactive charts{% endblock %}
+{% block page_title %}Analysis{% endblock %}
+{% block page_sub %}Monthly trend, category breakdown, regional split, comparisons and seasonality — every chart height-capped so nothing stretches.{% endblock %}
+
+{% block content %}
+
+{% if not has_data %}
+<section class="empty-state reveal">
+    <div class="empty-icon"><i data-lucide="bar-chart-3"></i></div>
+    <h2>No dataset loaded</h2>
+    <p>Upload a CSV/Excel file to explore the interactive charts.</p>
+    {% if user.role == 'administrator' %}
+    <a href="{{ url_for('data_control') }}" class="btn btn-primary">
+        <i data-lucide="upload"></i> Upload data
+    </a>
+    {% endif %}
+</section>
+
+{% else %}
+
+<!-- ============ FILTERS ============ -->
+<section class="filter-bar glass reveal" id="filters">
+    <div class="filter-group">
+        <label class="filter-field">
+            <span><i data-lucide="map-pin"></i> Region</span>
+            <select id="fRegion"><option value="">All Regions</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="tags"></i> Category</span>
+            <select id="fCategory"><option value="">All Categories</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> From</span>
+            <input type="date" id="fFrom">
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> To</span>
+            <input type="date" id="fTo">
+        </label>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-ghost" id="btnClearFilters">
+            <i data-lucide="rotate-ccw"></i> Reset
+        </button>
+        <button class="btn btn-primary" id="btnApplyFilters">
+            <i data-lucide="filter"></i> Apply
+        </button>
+    </div>
+</section>
+
+<!-- ============ 01 · REVENUE ANALYSIS ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">01 · Revenue analysis</span>
+            <h2>How revenue moves</h2>
+        </div>
+        <p class="section-note">Monthly trend, cumulative build-up, mix by category and region, plus Pareto concentration.</p>
+    </div>
+
+    <div class="grid-12" style="margin-top:14px">
+
+        <div class="chart-card col-8">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="line-chart"></i> Monthly Sales Trend</h3>
+                    <p>Monthly sales performance with hover crosshair</p>
+                </div>
+                <span class="chart-legend-chip" id="trendRange">24 months</span>
+            </div>
+            <div class="chart-body tall">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="trending-up"></i> Cumulative Revenue</h3>
+                    <p>Running total vs 3-month average</p>
+                </div>
+            </div>
+            <div class="chart-body tall">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="cumulativeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="pie-chart"></i> Category-wise Breakdown</h3>
+                    <p>Toggle categories to compare</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <div class="category-toggles" id="categoryToggles"></div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="map"></i> Regional Share</h3>
+                    <p>Revenue contribution by region</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="regionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="bar-chart-2"></i> Pareto Concentration</h3>
+                    <p id="paretoSub">Top contributors + cumulative share</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="paretoChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 02 · COMPARISONS & DISTRIBUTION ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">02 · Comparisons &amp; distribution</span>
+            <h2>Benchmarks and spread</h2>
+        </div>
+        <p class="section-note">Year-over-year battles, month-over-month growth, order-value distribution and quantity correlation.</p>
+    </div>
+
+    <div class="grid-12" style="margin-top:14px">
+
+        <div class="chart-card col-8">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="git-compare"></i> Year-over-Year</h3>
+                    <p>Same months, side by side across two years</p>
+                </div>
+                <span class="chart-legend-chip" id="compareYears">—</span>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="compareChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="activity"></i> Growth Pulse</h3>
+                    <p>Month-over-month change (%)</p>
+                </div>
+            </div>
+            <div class="card-stats" id="growthStats">
+                <div class="card-stat"><b>—</b><span>Average</span></div>
+                <div class="card-stat"><b>—</b><span>Best</span></div>
+                <div class="card-stat"><b>—</b><span>Worst</span></div>
+            </div>
+            <div class="chart-body short">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="bar-chart"></i> Order Distribution</h3>
+                    <p>How order values are spread</p>
+                </div>
+            </div>
+            <div class="card-stats" id="distStats">
+                <div class="card-stat"><b>—</b><span>Median</span></div>
+                <div class="card-stat"><b>—</b><span>Avg</span></div>
+                <div class="card-stat"><b>—</b><span>σ Std dev</span></div>
+            </div>
+            <div class="chart-body short">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="scatter-chart"></i> Quantity vs Sales</h3>
+                    <p>Correlation between units and revenue</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="scatterChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="badge-dollar-sign"></i> Profitability</h3>
+                    <p>Sales, profit and margin by category</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="skeleton sk-chart"></div>
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 03 · SEASONALITY ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">03 · Seasonality</span>
+            <h2>When demand peaks</h2>
+        </div>
+        <p class="section-note">Category × month revenue intensity — darker cells mark your strongest trading windows.</p>
+    </div>
+
+    <div class="chart-card col-12" style="margin-top:14px">
+        <div class="chart-head">
+            <div>
+                <h3><i data-lucide="grid-3x3"></i> Seasonality Heatmap</h3>
+                <p>Category × Month revenue intensity</p>
+            </div>
+        </div>
+        <div class="chart-body heatmap-body">
+            <div class="skeleton sk-chart"></div>
+            <div class="heatmap" id="heatmap"></div>
+        </div>
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

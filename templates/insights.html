@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Insights{% endblock %}
+{% block eyebrow %}AI signals{% endblock %}
+{% block page_title %}Key Business Findings{% endblock %}
+{% block page_sub %}Signals generated automatically from your data — momentum, leaders and concentration risk, recomputed on every filter change.{% endblock %}
+
+{% block content %}
+
+{% if not has_data %}
+<section class="empty-state reveal">
+    <div class="empty-icon"><i data-lucide="lightbulb"></i></div>
+    <h2>No dataset loaded</h2>
+    <p>Upload a CSV/Excel file to generate business findings.</p>
+    {% if user.role == 'administrator' %}
+    <a href="{{ url_for('data_control') }}" class="btn btn-primary">
+        <i data-lucide="upload"></i> Upload data
+    </a>
+    {% endif %}
+</section>
+
+{% else %}
+
+<!-- ============ FILTERS ============ -->
+<section class="filter-bar glass reveal" id="filters">
+    <div class="filter-group">
+        <label class="filter-field">
+            <span><i data-lucide="map-pin"></i> Region</span>
+            <select id="fRegion"><option value="">All Regions</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="tags"></i> Category</span>
+            <select id="fCategory"><option value="">All Categories</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> From</span>
+            <input type="date" id="fFrom">
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> To</span>
+            <input type="date" id="fTo">
+        </label>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-ghost" id="btnClearFilters">
+            <i data-lucide="rotate-ccw"></i> Reset
+        </button>
+        <button class="btn btn-primary" id="btnApplyFilters">
+            <i data-lucide="filter"></i> Apply
+        </button>
+    </div>
+</section>
+
+<!-- ============ SIGNAL CARDS ============ -->
+<section class="reveal" id="insights">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">01 · Signals</span>
+            <h2>What the data is telling you</h2>
+        </div>
+        <p class="section-note">Four narrative cards computed by the Pandas analysis engine — no hardcoded text.</p>
+    </div>
+
+    <div class="insight-grid" id="insightGrid" style="margin-top:14px">
+        {% for i in range(4) %}
+        <div class="insight-card"><div class="skeleton sk-block" style="position:relative;height:130px"></div></div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ============ METHODOLOGY ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">02 · Methodology</span>
+            <h2>How these findings are computed</h2>
+        </div>
+        <p class="section-note">Every signal is derived server-side from the filtered rows — fully reproducible.</p>
+    </div>
+
+    <div class="grid-12" style="margin-top:14px">
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="trophy"></i> Peak month</h3>
+                    <p>Best calendar month</p>
+                </div>
+            </div>
+            <p class="insight-body">Monthly revenue is aggregated with
+                <code>groupby('YYYY-MM')</code>. The maximum month is compared against the
+                mean of all months to express the lift as a percentage.</p>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="gauge"></i> 90-day momentum</h3>
+                    <p>Recent run rate</p>
+                </div>
+            </div>
+            <p class="insight-body">The average of the latest 3 months is compared with the
+                prior 3 months. A positive delta means the business is accelerating;
+                a negative delta flags a slowdown worth investigating.</p>
+        </div>
+
+        <div class="chart-card col-4">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="crown"></i> Category leader</h3>
+                    <p>Top contributor</p>
+                </div>
+            </div>
+            <p class="insight-body">Revenue is grouped by category and sorted. The leader's
+                share of total revenue shows how dependent performance is on a single
+                product family.</p>
+        </div>
+
+        <div class="chart-card col-12">
+            <div class="chart-head">
+                <div>
+                    <h3><i data-lucide="pie-chart"></i> Revenue concentration</h3>
+                    <p>Risk check</p>
+                </div>
+                <span class="chip chip-coral">Threshold: 70%</span>
+            </div>
+            <p class="insight-body">The combined share of the top two categories is compared
+                with a 70% threshold. Above it, the signal turns into a warning: losing one
+                category would materially dent total revenue. Below it, the mix is considered
+                balanced.</p>
+        </div>
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Forecasts{% endblock %}
+{% block eyebrow %}Machine learning{% endblock %}
+{% block page_title %}Forecast Lab{% endblock %}
+{% block page_sub %}Linear Regression trained on monthly history with time-series cross-validation — simulate any future month and inspect model quality.{% endblock %}
+
+{% block content %}
+
+{% if not has_data %}
+<section class="empty-state reveal">
+    <div class="empty-icon"><i data-lucide="brain"></i></div>
+    <h2>No dataset loaded</h2>
+    <p>Upload a CSV/Excel file with ≥ 12 months of history to train the model.</p>
+    {% if user.role == 'administrator' %}
+    <a href="{{ url_for('data_control') }}" class="btn btn-primary">
+        <i data-lucide="upload"></i> Upload data
+    </a>
+    {% endif %}
+</section>
+
+{% else %}
+
+<!-- ============ 01 · MODEL PERFORMANCE ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">01 · Evaluation</span>
+            <h2>Model performance</h2>
+        </div>
+        <p class="section-note">Cross-validated metrics — MAE, MAPE and R² tell you how trustworthy the forecasts are.</p>
+    </div>
+
+    <div class="ml-grid" style="margin-top:14px">
+        <!-- Metrics + residuals -->
+        <div class="panel">
+            <div class="panel-head">
+                <h3><i data-lucide="brain-circuit"></i> Evaluation Metrics</h3>
+                <span class="chip chip-indigo" id="modelStatus">loading…</span>
+            </div>
+
+            <div class="metric-quad" id="modelMetrics">
+                {% for i in range(4) %}
+                <div class="skeleton sk-metric"></div>
+                {% endfor %}
+            </div>
+
+            <div class="residual-wrap">
+                <div class="chart-head sub">
+                    <h4>Residual Errors</h4>
+                    <span class="hint">actual − predicted</span>
+                </div>
+                <div class="chart-body short">
+                    <canvas id="residualChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecast simulator -->
+        <div class="panel accent-panel">
+            <div class="panel-head">
+                <h3><i data-lucide="sparkles"></i> Forecast Simulator</h3>
+                <span class="chip chip-cyan">Linear Regression</span>
+            </div>
+
+            <form id="forecastForm" class="forecast-form">
+                <div class="forecast-row">
+                    <label class="field">
+                        <span class="field-label">Month</span>
+                        <select name="month" id="fcMonth">
+                            {% for m in range(1, 13) %}
+                            <option value="{{ m }}" {{ 'selected' if m == 6 }}>{{ ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label">Year</span>
+                        <input type="number" name="year" id="fcYear" min="2020" max="2035" value="2026">
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-glow">
+                    <i data-lucide="wand-2"></i>
+                    <span>Generate forecast</span>
+                </button>
+            </form>
+
+            <div class="forecast-result" id="forecastResult" hidden>
+                <div class="result-glow"></div>
+                <span class="result-label">Forecasted Revenue</span>
+                <span class="result-value" id="resultValue">$0</span>
+                <span class="result-period" id="resultPeriod"></span>
+                <div class="result-actions">
+                    <button class="btn btn-ghost btn-sm" id="btnHideResult">Dismiss</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 02 · OUTLOOK ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">02 · Outlook</span>
+            <h2>Six-month projection</h2>
+        </div>
+        <p class="section-note">The same model rolled forward six months in one call.</p>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+        <div class="panel-head">
+            <h3><i data-lucide="calendar-range"></i> 6-Month Outlook</h3>
+            <button class="btn btn-ghost btn-sm" id="btnLoadTimeline">
+                <i data-lucide="refresh-cw"></i> Load projection
+            </button>
+        </div>
+        <div class="timeline" id="timeline">
+            <div class="timeline-empty">Click “Load projection” to project the next 6 months</div>
+        </div>
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

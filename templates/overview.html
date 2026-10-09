@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Overview{% endblock %}
+{% block eyebrow %}Sales intelligence{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_sub %}KPI metrics for the active dataset — every card refreshes live as you change the filters below.{% endblock %}
+
+{% block page_actions %}
+    <div class="hero-stat">
+        <span class="hero-stat-val" id="heroTotal">—</span>
+        <span class="hero-stat-lbl">Total revenue</span>
+    </div>
+    <div class="hero-stat">
+        <span class="hero-stat-val" id="heroRows">—</span>
+        <span class="hero-stat-lbl">Records</span>
+    </div>
+    <button class="btn btn-ghost" id="btnRefresh" style="align-self:center">
+        <i data-lucide="refresh-cw"></i> Refresh
+    </button>
+{% endblock %}
+
+{% block content %}
+
+{% if not has_data %}
+<section class="empty-state reveal">
+    <div class="empty-icon"><i data-lucide="inbox"></i></div>
+    <h2>No dataset loaded</h2>
+    <p>Upload a CSV/Excel file from the Data Control panel to begin analysis.</p>
+    {% if user.role == 'administrator' %}
+    <a href="{{ url_for('data_control') }}" class="btn btn-primary">
+        <i data-lucide="upload"></i> Upload data
+    </a>
+    {% endif %}
+</section>
+
+{% else %}
+
+<!-- ============ GLOBAL FILTERS (persist across pages) ============ -->
+<section class="filter-bar glass reveal" id="filters">
+    <div class="filter-group">
+        <label class="filter-field">
+            <span><i data-lucide="map-pin"></i> Region</span>
+            <select id="fRegion"><option value="">All Regions</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="tags"></i> Category</span>
+            <select id="fCategory"><option value="">All Categories</option></select>
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> From</span>
+            <input type="date" id="fFrom">
+        </label>
+        <label class="filter-field">
+            <span><i data-lucide="calendar"></i> To</span>
+            <input type="date" id="fTo">
+        </label>
+    </div>
+    <div class="filter-actions">
+        <button class="btn btn-ghost" id="btnClearFilters">
+            <i data-lucide="rotate-ccw"></i> Reset
+        </button>
+        <button class="btn btn-primary" id="btnApplyFilters">
+            <i data-lucide="filter"></i> Apply
+        </button>
+    </div>
+</section>
+
+<!-- ============ KPI STRIP ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">Key metrics</span>
+            <h2>This month at a glance</h2>
+        </div>
+        <p class="section-note">Trend badges compare the latest month against the previous one.</p>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid" style="margin-top:14px">
+        {% for i in range(5) %}
+        <div class="kpi-card" data-kpi-slot="{{ i }}">
+            <div class="skeleton sk-block"></div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ============ DATASET GLANCE ============ -->
+<section class="reveal">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">Scope</span>
+            <h2>Business at a glance</h2>
+        </div>
+        <p class="section-note">Totals across the whole filtered period, not just the latest month.</p>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+        <div class="stat-grid" id="glanceGrid">
+            {% for i in range(6) %}
+            <div class="stat-cell"><div class="skeleton sk-cell"></div></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

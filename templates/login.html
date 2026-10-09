@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in · Nexus Analytics</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+
+    <!-- ============ LEFT STORY PANEL ============ -->
+    <aside class="login-aside">
+        <div class="aside-brand">
+            <span class="brand-mark"><i data-lucide="bar-chart-3"></i></span>
+            <span class="brand-name">Nexus<em>.</em></span>
+        </div>
+
+        <div class="aside-copy">
+            <h2>Every number<br>has a <em>story.</em></h2>
+            <p>Upload your sales data, clean it with Pandas in one click and let
+               Linear Regression chart what happens next.</p>
+        </div>
+
+        <div class="aside-metrics">
+            <div class="aside-metric">
+                <b>15+</b>
+                <span>Chart modules</span>
+            </div>
+            <div class="aside-metric">
+                <b>1-click</b>
+                <span>Data cleaning</span>
+            </div>
+            <div class="aside-metric">
+                <b>R² · MAE</b>
+                <span>ML metrics</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ RIGHT FORM PANEL ============ -->
+    <main class="login-main">
+        <div class="login-card">
+
+            <div class="login-head">
+                <span class="eyebrow">Analytics workspace</span>
+                <h1>Welcome back</h1>
+                <p>Sign in to open your sales intelligence dashboard.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-stack">
+                    {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                <label class="field">
+                    <span class="field-label">Username</span>
+                    <div class="input-shell">
+                        <i data-lucide="user"></i>
+                        <input type="text" name="username" placeholder="admin"
+                               autocomplete="username" required autofocus>
+                    </div>
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Password</span>
+                    <div class="input-shell">
+                        <i data-lucide="lock"></i>
+                        <input type="password" name="password" placeholder="••••••••"
+                               autocomplete="current-password" required>
+                    </div>
+                </label>
+
+                <button type="submit" class="btn btn-primary btn-block btn-glow">
+                    <span>Sign in</span>
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="login-hint">
+                <div class="hint-chip">
+                    <span class="hint-key">admin</span> / <span class="hint-key">admin123</span>
+                    <span class="hint-role">administrator</span>
+                </div>
+                <div class="hint-chip">
+                    <span class="hint-key">analyst</span> / <span class="hint-key">analyst123</span>
+                    <span class="hint-role">analyst</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

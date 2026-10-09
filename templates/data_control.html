@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Data Control{% endblock %}
+{% block eyebrow %}Data operations{% endblock %}
+{% block page_title %}Data Control{% endblock %}
+{% block page_sub %}Upload, clean and manage datasets — every import runs through the Pandas cleaning pipeline with a full report.{% endblock %}
+
+{% block content %}
+
+<!-- ============ HEALTH STRIP ============ -->
+<section class="health-strip reveal">
+    <div class="health-chip glass {{ 'ok' if health.data else 'warn' }}">
+        <i data-lucide="database"></i>
+        <span>Dataset</span>
+        <strong>{{ 'Ready' if health.data else 'Empty' }}</strong>
+    </div>
+    <div class="health-chip glass {{ 'ok' if health.model else 'warn' }}">
+        <i data-lucide="brain-circuit"></i>
+        <span>Model</span>
+        <strong>{{ 'Trained' if health.model else 'Untrained' }}</strong>
+    </div>
+    <div class="health-chip glass {{ 'ok' if health.metrics else 'warn' }}">
+        <i data-lucide="gauge"></i>
+        <span>Metrics</span>
+        <strong>{{ 'Available' if health.metrics else 'None' }}</strong>
+    </div>
+    <div class="health-chip glass">
+        <i data-lucide="layers"></i>
+        <span>Datasets managed</span>
+        <strong>{{ health.uploads }}</strong>
+    </div>
+    <div class="health-chip glass">
+        <i data-lucide="clock"></i>
+        <span>Server time</span>
+        <strong>{{ health.server_time }}</strong>
+    </div>
+</section>
+
+<!-- ============ MAIN GRID ============ -->
+<section class="admin-grid reveal">
+
+    <!-- Upload zone -->
+    <div class="panel glass upload-panel">
+        <div class="panel-head">
+            <h3><i data-lucide="upload-cloud"></i> Import Dataset</h3>
+            <span class="chip chip-cyan">CSV · XLSX · XLS</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('upload_file') }}"
+              enctype="multipart/form-data" id="uploadForm">
+
+            <div class="dropzone" id="dropzone">
+                <input type="file" name="file" id="fileInput"
+                       accept=".csv,.xlsx,.xls" hidden>
+
+                <div class="dz-idle" id="dzIdle">
+                    <div class="dz-icon"><i data-lucide="file-up"></i></div>
+                    <p class="dz-title">Drag & drop your file here</p>
+                    <p class="dz-sub">or click to browse · max 16 MB</p>
+                    <span class="btn btn-ghost btn-sm">
+                        <i data-lucide="folder-open"></i> Browse files
+                    </span>
+                </div>
+
+                <div class="dz-file" id="dzFile" hidden>
+                    <i data-lucide="file-spreadsheet" class="dz-file-icon"></i>
+                    <div class="dz-file-meta">
+                        <strong id="dzFileName">—</strong>
+                        <span id="dzFileSize">—</span>
+                    </div>
+                    <button type="button" class="icon-btn" id="dzClear" title="Remove">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="required-cols">
+                <span class="rc-label">Required columns</span>
+                <div class="rc-tags">
+                    <span class="tag">Order Date</span>
+                    <span class="tag">Category</span>
+                    <span class="tag">Region</span>
+                    <span class="tag">Sales</span>
+                    <span class="tag">Quantity</span>
+                    <span class="tag ghost">Profit (opt.)</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-glow" id="btnUpload">
+                <i data-lucide="sparkles"></i>
+                <span>Upload &amp; auto-clean</span>
+            </button>
+        </form>
+
+        <!-- Cleaning log -->
+        {% if last_cleaning %}
+        <div class="cleaning-log glass-inner">
+            <div class="log-head">
+                <h4><i data-lucide="list-checks"></i> Cleaning report</h4>
+                <span class="chip">{{ last_cleaning.filename }}</span>
+            </div>
+            <div class="log-stats">
+                <div class="log-stat">
+                    <span class="ls-val">{{ last_cleaning.original_rows }}</span>
+                    <span class="ls-label">Input rows</span>
+                </div>
+                <i data-lucide="arrow-right" class="log-arrow"></i>
+                <div class="log-stat accent">
+                    <span class="ls-val">{{ last_cleaning.final_rows }}</span>
+                    <span class="ls-label">Clean rows</span>
+                </div>
+                <div class="log-stat">
+                    <span class="ls-val">{{ last_cleaning.original_rows - last_cleaning.final_rows }}</span>
+                    <span class="ls-label">Removed</span>
+                </div>
+            </div>
+            <ol class="log-steps">
+                {% for step in last_cleaning.steps %}
+                <li>
+                    <span class="step-time">{{ step.time }}</span>
+                    <span>{{ step.message }}</span>
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Dataset stats + preview -->
+    <div class="panel glass">
+        <div class="panel-head">
+            <h3><i data-lucide="bar-chart-3"></i> Active Dataset</h3>
+            {% if data_stats %}
+            <div class="panel-actions">
+                <a href="{{ url_for('export_csv') }}" class="btn btn-ghost btn-sm">
+                    <i data-lucide="download"></i> CSV
+                </a>
+                <a href="{{ url_for('export_report') }}" class="btn btn-ghost btn-sm">
+                    <i data-lucide="file-text"></i> Report
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if data_stats %}
+        <div class="stat-grid">
+            <div class="stat-cell">
+                <span class="stat-val">{{ data_stats.rows|int }}</span>
+                <span class="stat-lbl">Rows</span>
+            </div>
+            <div class="stat-cell">
+                <span class="stat-val">{{ data_stats.columns }}</span>
+                <span class="stat-lbl">Columns</span>
+            </div>
+            <div class="stat-cell">
+                <span class="stat-val">{{ data_stats.size_kb }}<small>KB</small></span>
+                <span class="stat-lbl">File size</span>
+            </div>
+            <div class="stat-cell">
+                <span class="stat-val">{{ data_stats.regions }}</span>
+                <span class="stat-lbl">Regions</span>
+            </div>
+            <div class="stat-cell">
+                <span class="stat-val">{{ data_stats.categories }}</span>
+                <span class="stat-lbl">Categories</span>
+            </div>
+            <div class="stat-cell">
+                <span class="stat-val tiny">{{ data_stats.date_min }} → {{ data_stats.date_max }}</span>
+                <span class="stat-lbl">Date range</span>
+            </div>
+        </div>
+
+        <div class="table-scroll compact">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        {% for col in preview[0].keys() %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview %}
+                    <tr>
+                        {% for v in row.values() %}
+                        <td>{{ v }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="table-note">Previewing first {{ preview|length }} rows</p>
+
+        {% else %}
+        <div class="empty-mini">
+            <i data-lucide="inbox"></i>
+            <p>No active dataset. Upload a file to begin.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ============ MODEL OPS ============ -->
+<section class="reveal" id="models">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">Machine learning</span>
+            <h2>Model Operations</h2>
+        </div>
+        <p class="section-note">Retrain the Linear Regression model or clear everything to start fresh.</p>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+    <div class="panel-head">
+        <h3><i data-lucide="sigma"></i> Training Metrics</h3>
+        <div class="panel-actions">
+            <form method="POST" action="{{ url_for('retrain_model') }}" id="retrainForm">
+                <button type="submit" class="btn btn-primary btn-sm" id="btnRetrain">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Retrain model</span>
+                </button>
+            </form>
+
+            <form method="POST" action="{{ url_for('reset_data') }}"
+                  onsubmit="return confirm('Delete ALL cleaned data, models and metrics? This cannot be undone.')">
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i data-lucide="trash-2"></i>
+                    <span>Reset all</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% if metrics %}
+    <div class="metric-quad">
+        <div class="metric-cell">
+            <span class="metric-val">{{ metrics.mae }}</span>
+            <span class="metric-lbl">MAE</span>
+            <span class="metric-sub">mean absolute error</span>
+        </div>
+        <div class="metric-cell">
+            <span class="metric-val">{{ metrics.mse }}</span>
+            <span class="metric-lbl">MSE</span>
+            <span class="metric-sub">mean squared error</span>
+        </div>
+        <div class="metric-cell">
+            <span class="metric-val good">{{ metrics.r2 }}</span>
+            <span class="metric-lbl">R² Score</span>
+            <span class="metric-sub">cross-validated</span>
+        </div>
+        <div class="metric-cell">
+            <span class="metric-val">{{ metrics.train_r2 }}</span>
+            <span class="metric-lbl">Training R²</span>
+            <span class="metric-sub">fit on full data</span>
+        </div>
+    </div>
+
+    <div class="model-meta glass-inner">
+        <span><i data-lucide="calendar-check"></i> Trained {{ metrics.trained_at }}</span>
+        <span><i data-lucide="split"></i> {{ metrics.cv_folds }} CV folds</span>
+        <span><i data-lucide="sigma"></i> MAPE {{ metrics.mape }}%</span>
+        <span><i data-lucide="box"></i> {{ metrics.total_samples }} samples</span>
+    </div>
+
+    {% else %}
+    <div class="empty-mini">
+        <i data-lucide="brain"></i>
+        <p>No model trained yet — upload a dataset with ≥ 12 months of history.</p>
+    </div>
+    {% endif %}
+    </div>
+</section>
+
+<!-- ============ UPLOAD HISTORY ============ -->
+<section class="panel glass reveal">
+    <div class="panel-head">
+        <h3><i data-lucide="history"></i> Import History</h3>
+        <span class="chip">{{ upload_log|length }} entries</span>
+    </div>
+
+    {% if upload_log %}
+    <div class="history-list">
+        {% for entry in upload_log %}
+        <div class="history-item">
+            <div class="hi-icon"><i data-lucide="file-spreadsheet"></i></div>
+            <div class="hi-meta">
+                <strong>{{ entry.filename }}</strong>
+                <span>{{ entry.original_rows }} → {{ entry.final_rows }} rows · {{ entry.at }}</span>
+            </div>
+            <span class="chip chip-emerald">{{ entry.columns|length }} cols</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-mini">
+        <i data-lucide="clock"></i>
+        <p>No imports recorded yet.</p>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

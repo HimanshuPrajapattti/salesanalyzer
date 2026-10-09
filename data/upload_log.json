@@ -1,0 +1,32 @@
+[
+  {
+    "filename": "sales_data.xlsx",
+    "original_rows": 30,
+    "final_rows": 30,
+    "columns": [
+      "Order Date",
+      "Category",
+      "Sales",
+      "Month",
+      "Month Name",
+      "Year",
+      "Month-Year"
+    ],
+    "at": "2026-10-09 05:02:47"
+  },
+  {
+    "filename": "sales_data.xlsx",
+    "original_rows": 30,
+    "final_rows": 30,
+    "columns": [
+      "Order Date",
+      "Category",
+      "Sales",
+      "Month",
+      "Month Name",
+      "Year",
+      "Month-Year"
+    ],
+    "at": "2026-10-09 04:54:52"
+  }
+]

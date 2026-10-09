@@ -1,0 +1,21 @@
+{
+  "mae": 2217.03,
+  "mse": 4915209.04,
+  "rmse": 2217.03,
+  "r2": -8.2073,
+  "train_r2": 0.3869,
+  "mape": 26.42,
+  "cv_folds": 1,
+  "test_samples": 0,
+  "train_samples": 15,
+  "total_samples": 15,
+  "trained_at": "2026-10-09 05:02:47",
+  "features": [
+    "time_index",
+    "month_sin",
+    "month_cos"
+  ],
+  "target": "total_sales",
+  "origin_year": 2025,
+  "origin_month": 1
+}

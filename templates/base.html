@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} · Nexus Analytics</title>
+
+    <!-- Reveal-on-scroll only when JS is available -->
+    <script>document.documentElement.classList.add('js');</script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="page-wrap">
+
+    <!-- ============ TOP NAVIGATION ============ -->
+    <header class="topnav">
+        <a href="{{ url_for('overview') }}" class="brand">
+            <span class="brand-mark"><i data-lucide="bar-chart-3"></i></span>
+            <span class="brand-name">Nexus<em>.</em></span>
+        </a>
+
+        <nav class="topnav-links">
+            {% set ep = request.endpoint %}
+            <a href="{{ url_for('overview') }}"
+               class="nav-link {{ 'active' if ep == 'overview' }}">Overview</a>
+            <a href="{{ url_for('insights') }}"
+               class="nav-link {{ 'active' if ep == 'insights' }}">Insights</a>
+            <a href="{{ url_for('analysis') }}"
+               class="nav-link {{ 'active' if ep == 'analysis' }}">Analysis</a>
+            <a href="{{ url_for('forecasts') }}"
+               class="nav-link {{ 'active' if ep == 'forecasts' }}">Forecasts</a>
+            <a href="{{ url_for('explorer') }}"
+               class="nav-link {{ 'active' if ep == 'explorer' }}">Explorer</a>
+            {% if user and user.role == 'administrator' %}
+            <a href="{{ url_for('data_control') }}"
+               class="nav-link {{ 'active' if ep == 'data_control' }}">Data Control</a>
+            {% endif %}
+        </nav>
+
+        <div class="topnav-actions">
+            <div class="live-badge" title="Live data feed">
+                <span class="pulse-dot"></span>
+                <span>LIVE</span>
+            </div>
+
+            <div class="export-dropdown">
+                <button class="btn btn-ghost btn-sm" id="exportToggle">
+                    <i data-lucide="download"></i>
+                    <span>Export</span>
+                    <i data-lucide="chevron-down" class="chev"></i>
+                </button>
+                <div class="dropdown-menu" id="exportMenu">
+                    <a href="{{ url_for('export_csv') }}" class="dropdown-item">
+                        <i data-lucide="file-spreadsheet"></i>
+                        <span>Download CSV</span>
+                    </a>
+                    <a href="{{ url_for('export_report') }}" class="dropdown-item">
+                        <i data-lucide="file-text"></i>
+                        <span>Summary Report</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="user-chip">
+                <div class="user-avatar">{{ user.username[0]|upper if user else 'G' }}</div>
+                <div class="user-meta">
+                    <span class="user-name">{{ user.username if user else 'Guest' }}</span>
+                    <span class="user-role">{{ user.role if user else 'guest' }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn" title="Sign out">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+
+            <button class="icon-btn nav-toggle" id="navToggle" title="Menu">
+                <i data-lucide="menu"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile drawer -->
+    <nav class="mobile-nav" id="mobileNav">
+        <a href="{{ url_for('overview') }}" class="nav-link {{ 'active' if request.endpoint == 'overview' }}">Overview</a>
+        <a href="{{ url_for('insights') }}" class="nav-link {{ 'active' if request.endpoint == 'insights' }}">Insights</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link {{ 'active' if request.endpoint == 'analysis' }}">Analysis</a>
+        <a href="{{ url_for('forecasts') }}" class="nav-link {{ 'active' if request.endpoint == 'forecasts' }}">Forecasts</a>
+        <a href="{{ url_for('explorer') }}" class="nav-link {{ 'active' if request.endpoint == 'explorer' }}">Explorer</a>
+        {% if user and user.role == 'administrator' %}
+        <a href="{{ url_for('data_control') }}" class="nav-link {{ 'active' if request.endpoint == 'data_control' }}">Data Control</a>
+        {% endif %}
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="content" style="padding-bottom:0;gap:10px">
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}" data-flash>
+                    <i data-lucide="{{ 'check-circle' if category == 'success' else ('alert-triangle' if category in ['warning','danger'] else 'info') }}"></i>
+                    <span>{{ message }}</span>
+                    <button class="flash-close" onclick="this.closest('[data-flash]').remove()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Page content -->
+    <main class="content">
+
+        {% block page_head %}
+        <div class="page-head">
+            <div>
+                <span class="eyebrow">{% block eyebrow %}Analytics workspace{% endblock %}</span>
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p class="page-sub">{% block page_sub %}Real-time sales intelligence{% endblock %}</p>
+            </div>
+            <div class="page-head-actions">
+                {% block page_actions %}{% endblock %}
+            </div>
+        </div>
+        {% endblock %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<!-- Global JS -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+
+        // Reveal-on-scroll for editorial sections
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((e) => {
+                if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    });
+</script>
+</body>
+</html>
